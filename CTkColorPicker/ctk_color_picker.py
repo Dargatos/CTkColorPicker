@@ -24,13 +24,14 @@ class AskColor(customtkinter.CTkToplevel):
                  text: str = "OK",
                  corner_radius: int = 24,
                  slider_border: int = 1,
+                 command = None,
                  **button_kwargs):
     
         super().__init__()
         
         self.title(title)
         WIDTH = width if width>=200 else 200
-        HEIGHT = WIDTH + 150
+        HEIGHT = WIDTH + 170
         self.image_dimension = self._apply_window_scaling(WIDTH - 100)
         self.target_dimension = self._apply_window_scaling(20)
         
@@ -47,6 +48,8 @@ class AskColor(customtkinter.CTkToplevel):
         self.default_hex_color = "#ffffff"  
         self.default_rgb = [255, 255, 255]
         self.rgb_color = self.default_rgb[:]
+
+        self.command = command
         
         self.bg_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"]) if bg_color is None else bg_color
         self.fg_color = self.fg_color = self._apply_appearance_mode(customtkinter.ThemeManager.theme["CTkFrame"]["top_fg_color"]) if fg_color is None else fg_color
@@ -85,13 +88,17 @@ class AskColor(customtkinter.CTkToplevel):
                                               command=lambda x:self.update_colors())
         self.slider.pack(fill="both", pady=(0,15), padx=20-self.slider_border)
 
-        self.label = customtkinter.CTkLabel(master=self.frame, text_color="#000000", height=50, fg_color=self.default_hex_color,
+        self.label = customtkinter.CTkLabel(master=self.frame, text_color="#000000", height=40, fg_color=self.default_hex_color,
                                             corner_radius=self.corner_radius, text=self.default_hex_color)
-        self.label.pack(fill="both", padx=10)
+        self.label.pack(fill="both", padx=10,pady=(0,6))
         
-        self.button = customtkinter.CTkButton(master=self.frame, text=self.button_text, height=50, corner_radius=self.corner_radius, fg_color=self.button_color,
+        self.button = customtkinter.CTkButton(master=self.frame, text=self.button_text, height=40, corner_radius=self.corner_radius, fg_color=self.button_color,
                                               hover_color=self.button_hover_color, command=self._ok_event, **button_kwargs)
-        self.button.pack(fill="both", padx=10, pady=20)
+        self.button.pack(fill="both", padx=10, pady=6)
+
+        self.close = customtkinter.CTkButton(master=self.frame, text="Close",height=40,corner_radius=self.corner_radius, fg_color=self.button_color,
+                                              hover_color=self.button_hover_color,command=self._on_closing, **button_kwargs)
+        self.close.pack(fill="both", padx=10, pady=6)
                 
         self.after(150, lambda: self.label.focus())
                 
@@ -99,17 +106,22 @@ class AskColor(customtkinter.CTkToplevel):
         
     def get(self):
         self._color = self.label._fg_color
-        self.master.wait_window(self)
+        if self.command == None:
+            self.master.wait_window(self)
         return self._color
     
     def _ok_event(self, event=None):
         self._color = self.label._fg_color
         self.grab_release()
-        self.destroy()
-        del self.img1
-        del self.img2
-        del self.wheel
-        del self.target
+
+        if self.command: 
+            self.command(self.get()) 
+        else:
+            self.destroy()
+            del self.img1
+            del self.img2
+            del self.wheel
+            del self.target
         
     def _on_closing(self):
         self._color = None
